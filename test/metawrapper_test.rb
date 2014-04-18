@@ -3,7 +3,7 @@ class TestWithCollection
 	include Metawrapper
 	# include Enumerable
 	attr_reader :stuff
-	attr_wrapper :stuff => [:max, :min, :each], :other_stuff => [:[]]
+	attr_wrapper :stuff => :all
 
 	def initialize
 		@stuff = [1,2,3,4,5, 6]
@@ -22,4 +22,4 @@ t.each do |el|
 end
 
 # puts t
-print t
+print t.max

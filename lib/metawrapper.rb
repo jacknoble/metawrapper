@@ -9,18 +9,26 @@ module Metawrapper
 
 		def method_missing(method_name, *args, &blk)
 			variable_found = false
-			instance_variables.each do |var|
+			wrapped_variables.each do |var|
 				if variable_responds_to_method?(var, method_name)
 					variable_found = true
-					return instance_variable_get(var).send(method_name, *args, &blk)
+					return get_ivar(var).send(method_name, *args, &blk)
 				end
 			end
 			super unless variable_found
 		end
 
+		def wrapped_variables
+			self.class.instance_variable_get(:@wrapped_variables)
+		end
+
+		def get_ivar(var)
+			instance_variable_get('@' + var.to_s)
+		end
+ 
 
 		def variable_responds_to_method?(var, method)
-			instance_variable_get(var).respond_to?(method)
+			instance_variable_get('@'+ var.to_s).respond_to?(method)
 		end
 
 
@@ -32,9 +40,17 @@ module Metawrapper
 			wrapped_variables = var_to_methods_hash.keys
 			wrapped_variables.each do |var|
 				methods = var_to_methods_hash[var]
-				methods = unique_methods_for_variable(var) if methods == :every
-				add_methods(var, methods)
+				if methods == :all
+					delegate_missing_methods_to_variable(var)
+				else
+					add_methods(var, methods)
+				end
 			end
+		end
+
+		def delegate_missing_methods_to_variable(var)
+			@wrapped_variables ||= []
+			@wrapped_variables << var
 		end
 
 		def unique_methods_for_variable_class(var)
@@ -43,7 +59,6 @@ module Metawrapper
 				!self.instance_methods.include?(method)
 			end
 		end
-
 
 		def add_methods(var, methods)
 			methods.each do |method|
